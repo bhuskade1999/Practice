@@ -2,6 +2,9 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 app.use(express.json());
+const cors = require("cors")
+
+app.use(cors())
 
 
 mongoose.connect("mongodb+srv://nishant55:1234@nishant99.et97kst.mongodb.net/FeedBack", { useNewUrlParser: true })
