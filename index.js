@@ -7,19 +7,111 @@ const cors = require("cors")
 app.use(cors())
 
 
-mongoose.connect("mongodb+srv://nishant55:1234@nishant99.et97kst.mongodb.net/FeedBack", { useNewUrlParser: true })
+mongoose.connect("mongodb+srv://nishant55:1234@nishant99.et97kst.mongodb.net/Social_Media_App?retryWrites=true&w=majority", { useNewUrlParser: true })
   .then(() => {
     console.log("mongodb connected successfully")
   })
   .catch((err) => console.log(err))
 
-const commentSchema = new mongoose.Schema({
-  name:String,
-  email:String,
-  feedback:String
-});
+ 
+const UserSchema = new mongoose.Schema({
+  name:{
+      type:String,
+      required:[true, "Please Enter Name"]
+  },
 
-const Feedback = mongoose.model("Comment", commentSchema);
+  avatar:{
+      public_id:String,
+      url:String
+  },
+
+  email:{
+      type:String,
+      unique:[true,"Email Already Exists"],
+      required:[true, "Please Enter Email"]
+  },
+
+  password:{
+      type:String,
+      required:[true, "Please Enter Password"],
+      minlength:[6, "Password must be atleast 6 characters"],
+      select:false
+  },
+
+  posts:[
+      {
+          type:mongoose.Schema.Types.ObjectId,
+          ref:'Post'
+      }
+  ],
+  followers:[
+      {
+          type:mongoose.Schema.Types.ObjectId,
+          ref:'User'
+      }
+  ],
+
+  following:[
+      {
+          type:mongoose.Schema.Types.ObjectId,
+          ref:'User'
+      }
+  ],
+
+  resetPasswordToken :String,
+  resetPasswordExpires: Date,
+  
+  
+})
+
+const UserModel = mongoose.model('User', UserSchema);
+
+
+const postSchema = new mongoose.Schema({
+  caption:String,
+  image:{
+      public_Id:String,
+      url:String
+  },
+  
+  owner:{
+      type:mongoose.Schema.Types.ObjectId,
+      ref:'User'
+  },
+  createdAt:{
+      type:Date,
+      default:Date.now()
+  },
+  likes:[
+      {
+          type:mongoose.Schema.Types.ObjectId,
+          ref:'User'
+      }
+  ],
+  comments:[
+      {
+      user:{
+          type:mongoose.Schema.Types.ObjectId,
+          ref:'User'
+      },
+      comment:{
+          type:String,
+          required:true
+      }
+  }
+  ],
+  
+  
+  })
+  
+  PostModel = mongoose.model('Post', postSchema);
+
+
+
+
+
+
+
 
 app.get("/", (req, res) => {
   console.log("working fine");
@@ -27,42 +119,22 @@ app.get("/", (req, res) => {
 });
 
 
-app.post("/feedback", async (req,res)=>{
+app.get("/me", async(req,res)=>{
   try{
-    let data = req.body
-    let create = await Feedback.create(data) 
-    res.status(200).json({
-        success: true,
-        message :"Feedback submitted Successfully",
-      });
-  }
-  catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message,
-      });
-    }
-    
-})  
+  let id ="6436d18a194abc287ca675c0"
+    const user = await UserModel.findById(id).populate("posts followers following")
 
+    res.status(200).json({success:true, user})
 
-app.get("/getFeedback", async (req,res)=>{
-  try{
-     let user = await Feedback.find().select({name:1,feedback:1})
-      res.status(200).json({
-        success: true,
-        user,
-      });  
-  } 
-  catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message,
-      });
-    }
-    
+}catch(err){
+    res.status(500).send({success :false, message:err.message});
+}
 
 })
+
+ 
+  
+
 
 app.listen(4000, () => {
   console.log("listening on port",4000)
